@@ -1,0 +1,59 @@
+name: CI - Run Tests and Produce Artifacts
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run tests
+        run: python3 test_investigator.py
+
+      - name: Run example usage
+        run: python3 example_usage.py
+
+      - name: Generate sample investigation report
+        run: python3 investigator.py
+
+      - name: Upload investigation data artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: investigation-data
+          path: .investigator-data/
+          retention-days: 30
+
+      - name: Create test results summary
+        run: |
+          mkdir -p test-results
+          echo "# Test Results Summary" > test-results/summary.md
+          echo "" >> test-results/summary.md
+          echo "**Run Date:** $(date -u)" >> test-results/summary.md
+          echo "" >> test-results/summary.md
+          echo "## Test Output" >> test-results/summary.md
+          echo '```' >> test-results/summary.md
+          python3 test_investigator.py >> test-results/summary.md 2>&1
+          echo '```' >> test-results/summary.md
+
+      - name: Upload test results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30
