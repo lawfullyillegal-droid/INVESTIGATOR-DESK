@@ -59,11 +59,13 @@ jobs:
           retention-days: 30
 
       - name: Create static website artifact
+        env:
+          REPO_URL: https://github.com/${{ github.repository }}
         run: |
           mkdir -p website-artifact
           
           # Create index.html as entry point
-          cat > website-artifact/index.html << 'EOF'
+          cat > website-artifact/index.html << EOF
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -194,7 +196,7 @@ jobs:
                 </p>
                 <div class="info-box">
                   <p><strong>How to Access Artifacts:</strong></p>
-                  <p>1. Navigate to the <a href="https://github.com/lawfullyillegal-droid/INVESTIGATOR-DESK/actions">Actions tab</a> in the GitHub repository</p>
+                  <p>1. Navigate to the <a href="${REPO_URL}/actions">Actions tab</a> in the GitHub repository</p>
                   <p>2. Select a workflow run</p>
                   <p>3. Scroll to the "Artifacts" section at the bottom</p>
                   <p>4. Download the artifacts you want to inspect</p>
@@ -206,19 +208,19 @@ jobs:
                 <ul class="artifact-list">
                   <li class="artifact-item">
                     <div class="artifact-name">
-                      <a href="https://github.com/lawfullyillegal-droid/INVESTIGATOR-DESK">Repository</a>
+                      <a href="${REPO_URL}">Repository</a>
                     </div>
                     <div class="artifact-desc">Main GitHub repository</div>
                   </li>
                   <li class="artifact-item">
                     <div class="artifact-name">
-                      <a href="https://github.com/lawfullyillegal-droid/INVESTIGATOR-DESK/actions">Actions</a>
+                      <a href="${REPO_URL}/actions">Actions</a>
                     </div>
                     <div class="artifact-desc">View all workflow runs and artifacts</div>
                   </li>
                   <li class="artifact-item">
                     <div class="artifact-name">
-                      <a href="https://github.com/lawfullyillegal-droid/INVESTIGATOR-DESK/actions/workflows/ci.yml">CI Workflow</a>
+                      <a href="${REPO_URL}/actions/workflows/ci.yml">CI Workflow</a>
                     </div>
                     <div class="artifact-desc">CI workflow that generates these artifacts</div>
                   </li>
