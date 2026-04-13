@@ -332,6 +332,109 @@ def main():
     
     return 0
 
+# ============================================================
+# PROVER9 OBSERVER PATCH HOLOGRAPHY MODULE
+# Issue #5 - Added 2026-04-13
+# ============================================================
+import subprocess
+import shutil
+
+class Prover9Runner:
+    """Runs Prover9 formal logic proofs for Observer Patch Holography.
+    Handles Termux path resolution and Evidence directory auto-creation.
+    """
+
+    TERMUX_HOME = os.path.expanduser("~")
+    EVIDENCE_BASE = os.path.join(os.path.expanduser("~"), "Evidence")
+
+    def __init__(self, audit_id: str = "Audit_P9-29621"):
+        self.audit_id = audit_id
+        self.evidence_dir = os.path.join(self.EVIDENCE_BASE, audit_id)
+        self._ensure_evidence_dir()
+
+    def _ensure_evidence_dir(self):
+        """Auto-create Evidence/Audit directory (fixes Issue #5 mkdir requirement)."""
+        os.makedirs(self.evidence_dir, exist_ok=True)
+        print(f"[Prover9Runner] Evidence dir ready: {self.evidence_dir}")
+
+    def _resolve_pv9_path(self, filename: str) -> str:
+        """Resolve .pv9 file path safely in Termux environment."""
+        if os.path.isabs(filename):
+            return filename
+        # Check current dir, then TERMUX_HOME
+        for base in [os.getcwd(), self.TERMUX_HOME, self.evidence_dir]:
+            candidate = os.path.join(base, filename)
+            if os.path.exists(candidate):
+                return candidate
+        raise FileNotFoundError(
+            f"[Prover9Runner] Cannot stat '{filename}': No such file.\n"
+            f"Searched: cwd, {self.TERMUX_HOME}, {self.evidence_dir}\n"
+            "Hint: Place your .pv9 file in ~/Evidence/ or pass absolute path."
+        )
+
+    def run_proof(self, pv9_file: str, timeout: int = 60) -> Dict:
+        """Run a Prover9 proof on a .pv9 input file.
+        Returns a result dict with stdout, stderr, returncode, and output path.
+        """
+        if not shutil.which("prover9"):
+            return {
+                "status": "error",
+                "message": "prover9 not found. Install via: pkg install prover9",
+                "output": None
+            }
+
+        resolved = self._resolve_pv9_path(pv9_file)
+        base_name = os.path.splitext(os.path.basename(resolved))[0]
+        output_file = os.path.join(self.evidence_dir, f"{base_name}_result.txt")
+
+        try:
+            result = subprocess.run(
+                ["prover9", "-f", resolved],
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            with open(output_file, "w") as f:
+                f.write(f"# Prover9 Output - {datetime.now().isoformat()}\n")
+                f.write(f"# Input: {resolved}\n\n")
+                f.write(result.stdout)
+                if result.stderr:
+                    f.write("\n# STDERR:\n")
+                    f.write(result.stderr)
+
+            return {
+                "status": "proved" if result.returncode == 0 else "failed",
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "output_file": output_file
+            }
+        except subprocess.TimeoutExpired:
+            return {"status": "timeout", "message": f"Proof timed out after {timeout}s"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def run_observer_patch_holography(self, pv9_file: str) -> Dict:
+        """Run Observer Patch Holography proof and log to Evidence audit dir."""
+        print(f"[ObserverPatch] Running holographic proof: {pv9_file}")
+        result = self.run_proof(pv9_file)
+        log_path = os.path.join(self.evidence_dir, "observer_patch_log.json")
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "pv9_file": pv9_file,
+            "result": result
+        }
+        log = []
+        if os.path.exists(log_path):
+            with open(log_path) as f:
+                log = json.load(f)
+        log.append(entry)
+        with open(log_path, "w") as f:
+            json.dump(log, f, indent=2)
+        print(f"[ObserverPatch] Result: {result.get('status')} | Log: {log_path}")
+        return result
+
+
 
 if __name__ == "__main__":
     sys.exit(main())
