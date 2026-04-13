@@ -57,3 +57,212 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 30
+
+      - name: Create static website artifact
+        env:
+          REPO_URL: https://github.com/${{ github.repository }}
+        run: |
+          mkdir -p website-artifact
+          
+          # Create index.html as entry point
+          cat > website-artifact/index.html << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>INVESTIGATOR-DESK - Workflow Artifacts</title>
+            <style>
+              :root {
+                --bg: #0a0c10;
+                --panel: #12161c;
+                --text: #e6edf3;
+                --muted: #9aa4b2;
+                --accent: #5bc0be;
+                --border: #1f2630;
+              }
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
+                padding: 40px 20px;
+                line-height: 1.6;
+              }
+              .container {
+                max-width: 900px;
+                margin: 0 auto;
+              }
+              h1 {
+                font-size: 32px;
+                margin-bottom: 10px;
+                color: var(--accent);
+              }
+              .subtitle {
+                color: var(--muted);
+                margin-bottom: 40px;
+                font-size: 16px;
+              }
+              .panel {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 24px;
+                margin-bottom: 20px;
+              }
+              h2 {
+                font-size: 20px;
+                margin-bottom: 16px;
+                color: var(--accent);
+              }
+              .artifact-list {
+                list-style: none;
+              }
+              .artifact-item {
+                padding: 12px;
+                margin-bottom: 8px;
+                background: #0f1318;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+              }
+              .artifact-name {
+                font-weight: 600;
+                color: var(--text);
+                margin-bottom: 4px;
+              }
+              .artifact-desc {
+                color: var(--muted);
+                font-size: 14px;
+              }
+              .info-box {
+                background: #0f1318;
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 16px;
+                margin-top: 20px;
+              }
+              .info-box p {
+                margin-bottom: 8px;
+                color: var(--muted);
+                font-size: 14px;
+              }
+              a {
+                color: var(--accent);
+                text-decoration: none;
+              }
+              a:hover {
+                text-decoration: underline;
+              }
+              footer {
+                margin-top: 60px;
+                padding-top: 20px;
+                border-top: 1px solid var(--border);
+                text-align: center;
+                color: var(--muted);
+                font-size: 14px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>INVESTIGATOR-DESK</h1>
+              <p class="subtitle">Workflow Artifacts & Test Results</p>
+              
+              <div class="panel">
+                <h2>📦 Available Artifacts</h2>
+                <ul class="artifact-list">
+                  <li class="artifact-item">
+                    <div class="artifact-name">Investigation Data</div>
+                    <div class="artifact-desc">
+                      Sample investigation data generated from the Python investigator tool. 
+                      Contains JSON files with investigation cases, authority sources, and evidence tracking.
+                    </div>
+                  </li>
+                  <li class="artifact-item">
+                    <div class="artifact-name">Test Results</div>
+                    <div class="artifact-desc">
+                      Automated test results and summary from the CI pipeline.
+                      Includes test output and execution details.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="panel">
+                <h2>ℹ️ About This Page</h2>
+                <p>
+                  This is a static entry point for viewing workflow artifacts from the INVESTIGATOR-DESK CI pipeline.
+                  The artifacts listed above are generated automatically when the workflow runs.
+                </p>
+                <div class="info-box">
+                  <p><strong>How to Access Artifacts:</strong></p>
+                  <p>1. Navigate to the <a href="${REPO_URL}/actions">Actions tab</a> in the GitHub repository</p>
+                  <p>2. Select a workflow run</p>
+                  <p>3. Scroll to the "Artifacts" section at the bottom</p>
+                  <p>4. Download the artifacts you want to inspect</p>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h2>🔗 Quick Links</h2>
+                <ul class="artifact-list">
+                  <li class="artifact-item">
+                    <div class="artifact-name">
+                      <a href="${REPO_URL}">Repository</a>
+                    </div>
+                    <div class="artifact-desc">Main GitHub repository</div>
+                  </li>
+                  <li class="artifact-item">
+                    <div class="artifact-name">
+                      <a href="${REPO_URL}/actions">Actions</a>
+                    </div>
+                    <div class="artifact-desc">View all workflow runs and artifacts</div>
+                  </li>
+                  <li class="artifact-item">
+                    <div class="artifact-name">
+                      <a href="${REPO_URL}/actions/workflows/ci.yml">CI Workflow</a>
+                    </div>
+                    <div class="artifact-desc">CI workflow that generates these artifacts</div>
+                  </li>
+                </ul>
+              </div>
+
+              <footer>
+                <p>INVESTIGATOR-DESK • Static Workflow Artifact Entry Point</p>
+                <p>Generated automatically by GitHub Actions</p>
+              </footer>
+            </div>
+          </body>
+          </html>
+          EOF
+          
+          # Copy test results summary if it exists
+          if [ -f test-results/summary.md ]; then
+            cp test-results/summary.md website-artifact/
+          fi
+          
+          # Create a README for the artifact
+          cat > website-artifact/README.md << 'EOF'
+          # Workflow Artifacts Website
+          
+          This is a static website entry point for viewing INVESTIGATOR-DESK workflow artifacts.
+          
+          ## Files
+          
+          - `index.html` - Main entry point with artifact information and links
+          - `summary.md` - Test results summary (if available)
+          
+          ## Usage
+          
+          Open `index.html` in a web browser to view the artifact portal.
+          
+          This provides a free, static entry point to understand and access the workflow artifacts
+          generated by the CI pipeline.
+          EOF
+
+      - name: Upload website artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-artifact
+          path: website-artifact/
+          retention-days: 30
